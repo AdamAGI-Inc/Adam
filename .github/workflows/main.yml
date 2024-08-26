@@ -9,7 +9,7 @@ on:
     types: [created]
 
 env:
-  NODE_VERSION: '16'
+  NODE_VERSION: '18'
 
 jobs:
   build:
@@ -22,19 +22,23 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
 
-    - name: Install dependencies
+    - name: Install main project dependencies
       run: npm ci
+
+    - name: Install webview-ui dependencies
+      run: |
+        cd webview-ui
+        npm ci
+        cd ..
 
     - name: Run linter
       run: npm run lint
 
-    - name: Run tests
-      uses: GabrielBB/xvfb-action@v1
-      with:
-        run: npm test
+    - name: Install vsce
+      run: npm install -g @vscode/vsce
 
-    - name: Build extension
-      run: npm run vscode:package
+    - name: Package Extension
+      run: vsce package
 
     - name: Upload VSIX as artifact
       uses: actions/upload-artifact@v2
@@ -57,7 +61,7 @@ jobs:
     - name: Get VSIX filename
       id: get-vsix
       run: |
-        echo "::set-output name=vsix_name::$(ls *.vsix)"
+        echo "vsix_name=$(ls *.vsix)" >> $GITHUB_OUTPUT
 
     - name: Upload to Azure Blob Storage
       uses: azure/CLI@v1
