@@ -28,8 +28,11 @@ jobs:
     - name: Run linter
       run: npm run lint
 
-    - name: Build extension
-      run: npm run vscode:package
+    - name: Install vsce
+      run: npm install -g @vscode/vsce
+
+    - name: Package Extension
+      run: vsce package
 
     - name: Upload VSIX as artifact
       uses: actions/upload-artifact@v2
