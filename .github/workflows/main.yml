@@ -13,10 +13,10 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Use Node.js ${{ env.NODE_VERSION }}
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ env.NODE_VERSION }}
 
@@ -47,9 +47,35 @@ jobs:
         AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
       with:
         inlineScript: |
+          if [ -z "$AZURE_STORAGE_CONNECTION_STRING" ]; then
+            echo "Error: AZURE_STORAGE_CONNECTION_STRING is empty"
+            exit 1
+          fi
+          
+          echo "Checking Azure CLI version..."
+          az --version
+          
+          echo "Listing storage accounts..."
+          az storage account list
+          
+          echo "Uploading VSIX file..."
           az storage blob upload --container-name vscode-extension --file "${{ steps.get-info.outputs.vsix_name }}" --name "${{ steps.get-info.outputs.vsix_name }}" --overwrite true
+          if [ $? -ne 0 ]; then
+            echo "Error: Failed to upload VSIX file"
+            exit 1
+          fi
+          
+          echo "Creating version.txt..."
           echo "${{ steps.get-info.outputs.vsix_name }}" > version.txt
+          
+          echo "Uploading version.txt..."
           az storage blob upload --container-name vscode-extension --file version.txt --name version.txt --overwrite true
+          if [ $? -ne 0 ]; then
+            echo "Error: Failed to upload version.txt"
+            exit 1
+          fi
+          
+          echo "Upload completed successfully"
 
     - name: Create Release
       id: create_release
