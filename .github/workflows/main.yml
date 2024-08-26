@@ -10,7 +10,6 @@ on:
 
 env:
   NODE_VERSION: '16'
-  VSCODE_VERSION: '1.60.0'
 
 jobs:
   build:
@@ -69,12 +68,6 @@ jobs:
           az storage blob upload --container-name vscode-extension --file "${{ steps.get-vsix.outputs.vsix_name }}" --name "${{ steps.get-vsix.outputs.vsix_name }}" --overwrite true
           echo "${{ steps.get-vsix.outputs.vsix_name }}" > version.txt
           az storage blob upload --container-name vscode-extension --file version.txt --name version.txt --overwrite true
-
-    - name: Publish to Visual Studio Marketplace
-      if: success()
-      run: npm run deploy
-      env:
-        VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
     - name: Create Release
       id: create_release
