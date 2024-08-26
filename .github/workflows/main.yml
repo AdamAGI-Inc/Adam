@@ -1,0 +1,98 @@
+name: CI/CD for VSCode Extension
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [created]
+
+env:
+  NODE_VERSION: '16'
+  VSCODE_VERSION: '1.60.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linter
+      run: npm run lint
+
+    - name: Run tests
+      uses: GabrielBB/xvfb-action@v1
+      with:
+        run: npm test
+
+    - name: Build extension
+      run: npm run vscode:package
+
+    - name: Upload VSIX as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: vsix-package
+        path: "*.vsix"
+
+  publish:
+    needs: build
+    if: github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Download VSIX artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: vsix-package
+
+    - name: Get VSIX filename
+      id: get-vsix
+      run: |
+        echo "::set-output name=vsix_name::$(ls *.vsix)"
+
+    - name: Upload to Azure Blob Storage
+      uses: azure/CLI@v1
+      env:
+        AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+      with:
+        inlineScript: |
+          az storage blob upload --container-name vscode-extension --file "${{ steps.get-vsix.outputs.vsix_name }}" --name "${{ steps.get-vsix.outputs.vsix_name }}" --overwrite true
+          echo "${{ steps.get-vsix.outputs.vsix_name }}" > version.txt
+          az storage blob upload --container-name vscode-extension --file version.txt --name version.txt --overwrite true
+
+    - name: Publish to Visual Studio Marketplace
+      if: success()
+      run: npm run deploy
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./${{ steps.get-vsix.outputs.vsix_name }}
+        asset_name: ${{ steps.get-vsix.outputs.vsix_name }}
+        asset_content_type: application/octet-stream
