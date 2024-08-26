@@ -52,12 +52,6 @@ jobs:
             exit 1
           fi
           
-          echo "Checking Azure CLI version..."
-          az --version
-          
-          echo "Listing storage accounts..."
-          az storage account list
-          
           echo "Uploading VSIX file..."
           az storage blob upload --container-name vscode-extension --file "${{ steps.get-info.outputs.vsix_name }}" --name "${{ steps.get-info.outputs.vsix_name }}" --overwrite true
           if [ $? -ne 0 ]; then
@@ -65,10 +59,8 @@ jobs:
             exit 1
           fi
           
-          echo "Creating version.txt..."
+          echo "Creating and uploading version.txt..."
           echo "${{ steps.get-info.outputs.vsix_name }}" > version.txt
-          
-          echo "Uploading version.txt..."
           az storage blob upload --container-name vscode-extension --file version.txt --name version.txt --overwrite true
           if [ $? -ne 0 ]; then
             echo "Error: Failed to upload version.txt"
