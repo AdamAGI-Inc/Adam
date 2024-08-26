@@ -1,4 +1,4 @@
-name: CI/CD for VSCode Extension
+name: CI/CD for Claude Dev
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     types: [created]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'  # Updated to match the Node version in your package.json
 
 jobs:
   build:
@@ -22,17 +22,14 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
 
-    - name: Install main project dependencies
-      run: npm ci
-
-    - name: Install webview-ui dependencies
-      run: |
-        cd webview-ui
-        npm ci
-        cd ..
+    - name: Install dependencies
+      run: npm run install:all
 
     - name: Run linter
       run: npm run lint
+
+    - name: Build extension
+      run: npm run package
 
     - name: Install vsce
       run: npm install -g @vscode/vsce
