@@ -10,7 +10,7 @@ env:
   NODE_VERSION: '20'
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -35,28 +35,11 @@ jobs:
     - name: Package Extension
       run: vsce package
 
-    - name: Upload VSIX as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: vsix-package
-        path: "*.vsix"
-
-  publish:
-    needs: build
-    if: contains(github.event.head_commit.message, 'publish:v')
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Download VSIX artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: vsix-package
-
-    - name: Get VSIX filename
-      id: get-vsix
+    - name: Get VSIX filename and version
+      id: get-info
       run: |
         echo "vsix_name=$(ls *.vsix)" >> $GITHUB_OUTPUT
+        echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
     - name: Upload to Azure Blob Storage
       uses: azure/CLI@v1
@@ -64,13 +47,9 @@ jobs:
         AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
       with:
         inlineScript: |
-          az storage blob upload --container-name vscode-extension --file "${{ steps.get-vsix.outputs.vsix_name }}" --name "${{ steps.get-vsix.outputs.vsix_name }}" --overwrite true
-          echo "${{ steps.get-vsix.outputs.vsix_name }}" > version.txt
+          az storage blob upload --container-name vscode-extension --file "${{ steps.get-info.outputs.vsix_name }}" --name "${{ steps.get-info.outputs.vsix_name }}" --overwrite true
+          echo "${{ steps.get-info.outputs.vsix_name }}" > version.txt
           az storage blob upload --container-name vscode-extension --file version.txt --name version.txt --overwrite true
-
-    - name: Extract version from commit message
-      id: get_version
-      run: echo "VERSION=$(echo '${{ github.event.head_commit.message }}' | grep -oP 'publish:v\K[0-9]+\.[0-9]+\.[0-9]+')" >> $GITHUB_OUTPUT
 
     - name: Create Release
       id: create_release
@@ -78,8 +57,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v${{ steps.get_version.outputs.VERSION }}
-        release_name: Release v${{ steps.get_version.outputs.VERSION }}
+        tag_name: v${{ steps.get-info.outputs.version }}
+        release_name: Release v${{ steps.get-info.outputs.version }}
         draft: false
         prerelease: false
 
@@ -89,6 +68,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./${{ steps.get-vsix.outputs.vsix_name }}
-        asset_name: ${{ steps.get-vsix.outputs.vsix_name }}
+        asset_path: ./${{ steps.get-info.outputs.vsix_name }}
+        asset_name: ${{ steps.get-info.outputs.vsix_name }}
         asset_content_type: application/octet-stream
