@@ -9,7 +9,7 @@ on:
     types: [created]
 
 env:
-  NODE_VERSION: '16'
+  NODE_VERSION: '18'
 
 jobs:
   build:
@@ -29,9 +29,7 @@ jobs:
       run: npm run lint
 
     - name: Run tests
-      uses: GabrielBB/xvfb-action@v1
-      with:
-        run: npm test
+      run: npm test
 
     - name: Build extension
       run: npm run vscode:package
@@ -57,7 +55,7 @@ jobs:
     - name: Get VSIX filename
       id: get-vsix
       run: |
-        echo "::set-output name=vsix_name::$(ls *.vsix)"
+        echo "vsix_name=$(ls *.vsix)" >> $GITHUB_OUTPUT
 
     - name: Upload to Azure Blob Storage
       uses: azure/CLI@v1
