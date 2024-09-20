@@ -1,6 +1,6 @@
 {
-  "name": "claude-dev",
-  "displayName": "Claude Dev",
+  "name": "adam-vscode",
+  "displayName": "AdamAGI",
   "description": "Autonomous coding agent right in your IDE, capable of creating/editing files, executing commands, and more with your permission every step of the way.",
   "version": "1.8.3",
   "icon": "icons/icon.png",
@@ -12,13 +12,13 @@
     "vscode": "^1.84.0"
   },
   "author": {
-    "name": "Saoud Rizwan"
+    "name": "Ionut Pislar"
   },
-  "license": "MIT",
-  "publisher": "saoudrizwan",
+  "license": "AdamAGI Internal",
+  "publisher": "AdamAI",
   "repository": {
     "type": "git",
-    "url": "https://github.com/saoudrizwan/claude-dev"
+    "url": "https://github.com/AdamAGI-Inc/Adam.git"
   },
   "categories": [
     "AI",
