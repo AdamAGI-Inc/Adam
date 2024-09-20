@@ -11,64 +11,97 @@ const VERSION_URL = 'https://adamagi.blob.core.windows.net/vscode-extension/vers
 let outputChannel: vscode.OutputChannel;
 
 async function checkForUpdates(context: vscode.ExtensionContext) {
-    const extensionId = 'AdamAI.adam-vscode'; // Replace with your actual extension ID
-    const currentVersion = vscode.extensions.getExtension(extensionId)?.packageJSON.version;
-
-    if (!currentVersion) {
-        outputChannel.appendLine('Unable to determine current extension version');
+    const extensionId = 'AdamAI.adam-vscode'; // Make sure this matches your actual extension ID
+    const extension = vscode.extensions.getExtension(extensionId);
+    
+    if (!extension) {
+        outputChannel.appendLine(`Cannot find extension with ID ${extensionId}`);
+        vscode.window.showErrorMessage(`Cannot find extension with ID ${extensionId}`);
         return;
     }
 
-    https.get(VERSION_URL, (res) => {
-        let data = '';
-        res.on('data', (chunk) => data += chunk);
-        res.on('end', () => {
-            const latestVersion = data.trim();
-            if (latestVersion !== currentVersion) {
-                vscode.window.showInformationMessage(`A new version (${latestVersion}) of Adam VS Code Extension is available. Would you like to update?`, 'Yes', 'No')
-                    .then(selection => {
-                        if (selection === 'Yes') {
-                            downloadAndInstallUpdate(context);
-                        }
-                    });
-            } else {
-                outputChannel.appendLine('Adam VS Code Extension is up to date.');
+    const currentVersion = extension.packageJSON.version;
+    outputChannel.appendLine(`Current version: ${currentVersion}`);
+    vscode.window.showInformationMessage(`Current version: ${currentVersion}`);
+
+    try {
+        const latestVersion = await fetchLatestVersion();
+        outputChannel.appendLine(`Latest version: ${latestVersion}`);
+        vscode.window.showInformationMessage(`Latest version: ${latestVersion}`);
+
+        if (latestVersion !== currentVersion) {
+            const choice = await vscode.window.showInformationMessage(
+                `A new version (${latestVersion}) of Adam VS Code Extension is available. Would you like to update?`,
+                'Yes', 'No'
+            );
+            if (choice === 'Yes') {
+                await downloadAndInstallUpdate(context);
             }
-        });
-    }).on('error', (err) => {
-        outputChannel.appendLine(`Error checking for updates: ${err.message}`);
+        } else {
+            outputChannel.appendLine('Adam VS Code Extension is up to date.');
+            vscode.window.showInformationMessage('Adam VS Code Extension is up to date.');
+        }
+    } catch (error) {
+        outputChannel.appendLine(`Error checking for updates: ${error instanceof Error ? error.message : String(error)}`);
+        vscode.window.showErrorMessage(`Error checking for updates: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+function fetchLatestVersion(): Promise<string> {
+    return new Promise((resolve, reject) => {
+        https.get(VERSION_URL, (res) => {
+            let data = '';
+            res.on('data', (chunk) => data += chunk);
+            res.on('end', () => resolve(data.trim()));
+        }).on('error', reject);
     });
 }
 
-function downloadAndInstallUpdate(context: vscode.ExtensionContext) {
+async function downloadAndInstallUpdate(context: vscode.ExtensionContext) {
     const tempPath = path.join(context.globalStorageUri.fsPath, 'adam-vscode-temp.vsix');
-    const file = fs.createWriteStream(tempPath);
-    https.get(VSIX_URL, (response) => {
-        response.pipe(file);
-        file.on('finish', () => {
-            file.close();
-            vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(tempPath))
-                .then(() => {
-                    fs.unlink(tempPath, () => {});
-                    vscode.window.showInformationMessage('Adam VS Code Extension updated. Please reload the window.', 'Reload')
-                        .then(selection => {
-                            if (selection === 'Reload') {
-                                vscode.commands.executeCommand('workbench.action.reloadWindow');
-                            }
-                        });
-                });
-        });
-    }).on('error', (err) => {
-        outputChannel.appendLine(`Error downloading update: ${err.message}`);
+    
+    try {
+        await downloadFile(VSIX_URL, tempPath);
+        outputChannel.appendLine('Update downloaded. Installing...');
+        vscode.window.showInformationMessage('Update downloaded. Installing...');
+        
+        await vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(tempPath));
+        vscode.window.showInformationMessage('Adam VS Code Extension updated. Please reload the window.', 'Reload')
+            .then(selection => {
+                if (selection === 'Reload') {
+                    vscode.commands.executeCommand('workbench.action.reloadWindow');
+                }
+            });
+    } catch (error) {
+        outputChannel.appendLine(`Error during update: ${error instanceof Error ? error.message : String(error)}`);
+        vscode.window.showErrorMessage(`Error during update: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+        // Clean up the temporary file
         fs.unlink(tempPath, () => {});
+    }
+}
+
+function downloadFile(url: string, destPath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(destPath);
+        https.get(url, (response) => {
+            response.pipe(file);
+            file.on('finish', () => {
+                file.close();
+                resolve();
+            });
+        }).on('error', (err) => {
+            fs.unlink(destPath, () => {});
+            reject(err);
+        });
     });
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    outputChannel = vscode.window.createOutputChannel("AdamAGI");
+    outputChannel = vscode.window.createOutputChannel("Adam Dev");
     context.subscriptions.push(outputChannel);
 
-    outputChannel.appendLine("AdamAGI extension activated");
+    outputChannel.appendLine("Adam Dev extension activated");
 
     const sidebarProvider = new ClaudeDevProvider(context, outputChannel);
 
@@ -138,12 +171,12 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.registerTextDocumentContentProvider("claude-dev-diff", diffContentProvider)
     );
 
-    // Add auto-update command
-    context.subscriptions.push(
-        vscode.commands.registerCommand('extension.checkForUpdates', () => {
-            checkForUpdates(context);
-        })
-    );
+    // Register the update command
+    let disposable = vscode.commands.registerCommand('extension.checkForUpdates', () => {
+        checkForUpdates(context);
+    });
+
+    context.subscriptions.push(disposable);
 
     // Check for updates on activation
     checkForUpdates(context);
@@ -175,5 +208,5 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-    outputChannel.appendLine("AdamAGI extension deactivated");
+    outputChannel.appendLine("Adam Dev extension deactivated");
 }
