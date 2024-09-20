@@ -167,6 +167,7 @@
     "openai": "^4.61.0",
     "os-name": "^6.0.0",
     "p-wait-for": "^5.0.2",
+    "puppeteer-core": "^23.4.0",
     "serialize-error": "^11.0.3",
     "strip-ansi": "^7.1.0",
     "tree-sitter-wasms": "^0.1.11",
