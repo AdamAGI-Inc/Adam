@@ -38,7 +38,9 @@
     "ai",
     "llama"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:extension.checkForUpdates"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -84,6 +86,11 @@
         "command": "claude-dev.openInNewTab",
         "title": "Open In New Tab",
         "category": "Claude Dev"
+      },
+      {
+        "command": "extension.checkForUpdates",
+        "title": "Check for AdamAGI Updates",
+        "category": "AdamAGI"
       }
     ],
     "menus": {
