@@ -1,4 +1,4 @@
-name: CI/CD for Claude Dev
+name: CI/CD for Adam Dev
 
 on:
   push:
@@ -79,14 +79,28 @@ jobs:
         && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
         && sudo apt update \
         && sudo apt install gh -y
-    - name: Create Release and Upload Asset
+    - name: Create or Update Release and Upload Asset
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh release create "v${{ steps.increment-version.outputs.new_version }}" \
-          --title "Release v${{ steps.increment-version.outputs.new_version }}" \
-          --notes "Release notes for version ${{ steps.increment-version.outputs.new_version }}" \
-          "${{ env.VSIX_NAME }}"
+        RELEASE_TAG="v${{ steps.increment-version.outputs.new_version }}"
+        RELEASE_TITLE="Release $RELEASE_TAG"
+        RELEASE_NOTES="Release notes for version ${{ steps.increment-version.outputs.new_version }}"
+        
+        if gh release view $RELEASE_TAG > /dev/null 2>&1; then
+          echo "Updating existing release $RELEASE_TAG"
+          gh release edit $RELEASE_TAG \
+            --title "$RELEASE_TITLE" \
+            --notes "$RELEASE_NOTES"
+        else
+          echo "Creating new release $RELEASE_TAG"
+          gh release create $RELEASE_TAG \
+            --title "$RELEASE_TITLE" \
+            --notes "$RELEASE_NOTES"
+        fi
+        
+        echo "Uploading asset to release $RELEASE_TAG"
+        gh release upload $RELEASE_TAG "${{ env.VSIX_NAME }}" --clobber
     - name: Commit version bump
       run: |
         git config --local user.email "action@github.com"
