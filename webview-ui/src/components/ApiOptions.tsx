@@ -444,7 +444,7 @@ const ApiOptions = ({ showModelOptions, apiErrorMessage }: ApiOptionsProps) => {
 						}}>
 						You can use any OpenAI compatible API with models that support tool use.{" "}
 						<span style={{ color: "var(--vscode-errorForeground)" }}>
-							(<span style={{ fontWeight: 500 }}>Note:</span> Claude Dev uses complex prompts and works
+							(<span style={{ fontWeight: 500 }}>Note:</span> AdamAGI uses complex prompts and works
 							best with Claude models. Less capable models may not work as expected.)
 						</span>
 					</p>
@@ -514,7 +514,7 @@ const ApiOptions = ({ showModelOptions, apiErrorMessage }: ApiOptionsProps) => {
 							tool use.
 						</VSCodeLink>
 						<span style={{ color: "var(--vscode-errorForeground)" }}>
-							(<span style={{ fontWeight: 500 }}>Note:</span> Claude Dev uses complex prompts and works
+							(<span style={{ fontWeight: 500 }}>Note:</span> AdamAGI uses complex prompts and works
 							best with Claude models. Less capable models may not work as expected.)
 						</span>
 					</p>
@@ -637,7 +637,7 @@ const ModelInfoView = ({ selectedModelId, modelInfo }: { selectedModelId: string
 							fontStyle: "italic",
 							color: "var(--vscode-errorForeground)",
 						}}>
-						* This model does not support tool use or system prompts, so Claude Dev uses structured output
+						* This model does not support tool use or system prompts, so AdamAGI uses structured output
 						prompting to achieve similar results. Your mileage may vary.
 					</span>
 				</>

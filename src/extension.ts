@@ -65,10 +65,10 @@ function downloadAndInstallUpdate(context: vscode.ExtensionContext) {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    outputChannel = vscode.window.createOutputChannel("Claude Dev");
+    outputChannel = vscode.window.createOutputChannel("AdamAGI");
     context.subscriptions.push(outputChannel);
 
-    outputChannel.appendLine("Claude Dev extension activated");
+    outputChannel.appendLine("AdamAGI extension activated");
 
     const sidebarProvider = new ClaudeDevProvider(context, outputChannel);
 
@@ -175,5 +175,5 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-    outputChannel.appendLine("Claude Dev extension deactivated");
+    outputChannel.appendLine("AdamAGI extension deactivated");
 }

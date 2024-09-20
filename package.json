@@ -47,7 +47,7 @@
       "activitybar": [
         {
           "id": "claude-dev-ActivityBar",
-          "title": "Claude Dev",
+          "title": "AdamAGI",
           "icon": "$(robot)"
         }
       ]
@@ -85,7 +85,7 @@
       {
         "command": "claude-dev.openInNewTab",
         "title": "Open In New Tab",
-        "category": "Claude Dev"
+        "category": "AdamAGI"
       },
       {
         "command": "extension.checkForUpdates",

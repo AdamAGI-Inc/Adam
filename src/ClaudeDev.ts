@@ -30,7 +30,7 @@ import { parseMentions } from "./utils/context-mentions"
 import { UrlContentFetcher } from "./utils/UrlContentFetcher"
 
 const SYSTEM_PROMPT =
-	async () => `You are Claude Dev, a highly skilled software developer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices.
+	async () => `You are AdamAGI, a highly skilled software developer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices.
 
 ====
  
@@ -924,7 +924,7 @@ export class ClaudeDev {
 			// 	// 	console.log(`Could not open editor for ${absolutePath}: ${error}`)
 			// 	// }
 			// 	// await delay(50)
-			// 	// // Wait for the in-memory document to become the active editor (sometimes vscode timing issues happen and this would accidentally close claude dev!)
+			// 	// // Wait for the in-memory document to become the active editor (sometimes vscode timing issues happen and this would accidentally close AdamAGI!)
 			// 	// await pWaitFor(
 			// 	// 	() => {
 			// 	// 		return vscode.window.activeTextEditor?.document === inMemoryDocument
@@ -1607,7 +1607,7 @@ ${this.customInstructions.trim()}
 				"mistake_limit_reached",
 				this.api.getModel().id.includes("claude")
 					? `This may indicate a failure in his thought process or inability to use a tool properly, which can be mitigated with some user guidance (e.g. "Try breaking down the task into smaller steps").`
-					: "Claude Dev uses complex prompts and iterative task execution that may be challenging for less capable models. For best results, it's recommended to use Claude 3.5 Sonnet for its advanced agentic coding capabilities."
+					: "AdamAGI uses complex prompts and iterative task execution that may be challenging for less capable models. For best results, it's recommended to use Claude 3.5 Sonnet for its advanced agentic coding capabilities."
 			)
 			if (response === "messageResponse") {
 				userContent.push(

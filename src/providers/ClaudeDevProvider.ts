@@ -288,7 +288,7 @@ export class ClaudeDevProvider implements vscode.WebviewViewProvider {
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data:; script-src 'nonce-${nonce}';">
             <link rel="stylesheet" type="text/css" href="${stylesUri}">
 			<link href="${codiconsUri}" rel="stylesheet" />
-            <title>Claude Dev</title>
+            <title>AdamAGI</title>
           </head>
           <body>
             <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -97,7 +97,7 @@ class TerminalRegistry {
 	static createTerminal(cwd?: string | vscode.Uri | undefined): TerminalInfo {
 		const terminal = vscode.window.createTerminal({
 			cwd,
-			name: "Claude Dev",
+			name: "AdamAGI",
 			iconPath: new vscode.ThemeIcon("robot"),
 		})
 		const newInfo: TerminalInfo = {
