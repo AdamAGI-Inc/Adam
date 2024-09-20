@@ -11,6 +11,7 @@ permissions:
 
 env:
   NODE_VERSION: '20'
+  VSIX_NAME: 'adam-vscode.vsix'
 
 jobs:
   build-and-publish:
@@ -25,17 +26,24 @@ jobs:
       run: npm run install:all
     - name: Run linter
       run: npm run lint
+    - name: Increment version
+      id: increment-version
+      run: |
+        current_version=$(node -p "require('./package.json').version")
+        echo "Current version: $current_version"
+        
+        new_version=$(echo $current_version | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+        echo "New version: $new_version"
+        
+        sed -i 's/"version": "'$current_version'"/"version": "'$new_version'"/' package.json
+        
+        echo "new_version=$new_version" >> $GITHUB_OUTPUT
     - name: Build extension
       run: npm run package
     - name: Install vsce
       run: npm install -g @vscode/vsce
     - name: Package Extension
-      run: vsce package
-    - name: Get VSIX filename and version
-      id: get-info
-      run: |
-        echo "vsix_name=$(ls *.vsix)" >> $GITHUB_OUTPUT
-        echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      run: vsce package -o ${{ env.VSIX_NAME }}
     - name: Upload to Azure Blob Storage
       uses: azure/CLI@v1
       env:
@@ -48,14 +56,14 @@ jobs:
           fi
           
           echo "Uploading VSIX file..."
-          az storage blob upload --container-name vscode-extension --file "${{ steps.get-info.outputs.vsix_name }}" --name "${{ steps.get-info.outputs.vsix_name }}" --overwrite true
+          az storage blob upload --container-name vscode-extension --file "${{ env.VSIX_NAME }}" --name "${{ env.VSIX_NAME }}" --overwrite true
           if [ $? -ne 0 ]; then
             echo "Error: Failed to upload VSIX file"
             exit 1
           fi
           
           echo "Creating and uploading version.txt..."
-          echo "${{ steps.get-info.outputs.vsix_name }}" > version.txt
+          echo "${{ env.VSIX_NAME }}" > version.txt
           az storage blob upload --container-name vscode-extension --file version.txt --name version.txt --overwrite true
           if [ $? -ne 0 ]; then
             echo "Error: Failed to upload version.txt"
@@ -75,7 +83,14 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh release create "v${{ steps.get-info.outputs.version }}" \
-          --title "Release v${{ steps.get-info.outputs.version }}" \
-          --notes "Release notes for version ${{ steps.get-info.outputs.version }}" \
-          "${{ steps.get-info.outputs.vsix_name }}"
+        gh release create "v${{ steps.increment-version.outputs.new_version }}" \
+          --title "Release v${{ steps.increment-version.outputs.new_version }}" \
+          --notes "Release notes for version ${{ steps.increment-version.outputs.new_version }}" \
+          "${{ env.VSIX_NAME }}"
+    - name: Commit version bump
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add package.json
+        git commit -m "Bump version to ${{ steps.increment-version.outputs.new_version }} [skip ci]"
+        git push
