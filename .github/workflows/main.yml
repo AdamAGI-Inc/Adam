@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 env:
   NODE_VERSION: '20'
 
@@ -14,33 +17,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-
     - name: Use Node.js ${{ env.NODE_VERSION }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ env.NODE_VERSION }}
-
     - name: Install dependencies
       run: npm run install:all
-
     - name: Run linter
       run: npm run lint
-
     - name: Build extension
       run: npm run package
-
     - name: Install vsce
       run: npm install -g @vscode/vsce
-
     - name: Package Extension
       run: vsce package
-
     - name: Get VSIX filename and version
       id: get-info
       run: |
         echo "vsix_name=$(ls *.vsix)" >> $GITHUB_OUTPUT
         echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-
     - name: Upload to Azure Blob Storage
       uses: azure/CLI@v1
       env:
@@ -68,24 +63,19 @@ jobs:
           fi
           
           echo "Upload completed successfully"
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
+    - name: Install GitHub CLI
+      run: |
+        type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+        && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+        && sudo apt update \
+        && sudo apt install gh -y
+    - name: Create Release and Upload Asset
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v${{ steps.get-info.outputs.version }}
-        release_name: Release v${{ steps.get-info.outputs.version }}
-        draft: false
-        prerelease: false
-
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./${{ steps.get-info.outputs.vsix_name }}
-        asset_name: ${{ steps.get-info.outputs.vsix_name }}
-        asset_content_type: application/octet-stream
+      run: |
+        gh release create "v${{ steps.get-info.outputs.version }}" \
+          --title "Release v${{ steps.get-info.outputs.version }}" \
+          --notes "Release notes for version ${{ steps.get-info.outputs.version }}" \
+          "${{ steps.get-info.outputs.vsix_name }}"
