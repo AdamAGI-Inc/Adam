@@ -1,13 +1,14 @@
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { useExtensionState } from "../context/ExtensionStateContext"
 import { vscode } from "../utils/vscode"
-import { HistoryItem } from "../../../src/shared/HistoryItem"
+import { memo } from "react"
 
 type HistoryPreviewProps = {
-	taskHistory: HistoryItem[]
 	showHistoryView: () => void
 }
 
-const HistoryPreview = ({ taskHistory, showHistoryView }: HistoryPreviewProps) => {
+const HistoryPreview = ({ showHistoryView }: HistoryPreviewProps) => {
+	const { taskHistory } = useExtensionState()
 	const handleHistorySelect = (id: string) => {
 		vscode.postMessage({ type: "showTaskWithId", text: id })
 	}
@@ -28,11 +29,11 @@ const HistoryPreview = ({ taskHistory, showHistoryView }: HistoryPreviewProps) =
 	}
 
 	return (
-		<div style={{ flexGrow: 1, overflowY: "auto" }}>
+		<div style={{ flexShrink: 0 }}>
 			<style>
 				{`
 					.history-preview-item {
-						background-color: color-mix(in srgb, var(--vscode-toolbar-hoverBackground) 50%, transparent);
+						background-color: color-mix(in srgb, var(--vscode-toolbar-hoverBackground) 65%, transparent);
 						border-radius: 4px;
 						position: relative;
 						overflow: hidden;
@@ -108,17 +109,21 @@ const HistoryPreview = ({ taskHistory, showHistoryView }: HistoryPreviewProps) =
 									<span>
 										Tokens: ↑{item.tokensIn?.toLocaleString()} ↓{item.tokensOut?.toLocaleString()}
 									</span>
-									{" • "}
-									{item.cacheWrites && item.cacheReads && (
+									{!!item.cacheWrites && (
 										<>
+											{" • "}
 											<span>
 												Cache: +{item.cacheWrites?.toLocaleString()} →{" "}
-												{item.cacheReads?.toLocaleString()}
+												{(item.cacheReads || 0).toLocaleString()}
 											</span>
-											{" • "}
 										</>
 									)}
-									<span>API Cost: ${item.totalCost?.toFixed(4)}</span>
+									{!!item.totalCost && (
+										<>
+											{" • "}
+											<span>API Cost: ${item.totalCost?.toFixed(4)}</span>
+										</>
+									)}
 								</div>
 							</div>
 						</div>
@@ -144,4 +149,4 @@ const HistoryPreview = ({ taskHistory, showHistoryView }: HistoryPreviewProps) =
 	)
 }
 
-export default HistoryPreview
+export default memo(HistoryPreview)

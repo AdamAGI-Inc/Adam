@@ -1,60 +1,34 @@
-import {
-	VSCodeButton,
-	VSCodeCheckbox,
-	VSCodeLink,
-	VSCodeTextArea,
-	VSCodeTextField,
-} from "@vscode/webview-ui-toolkit/react"
-import React, { useEffect, useState } from "react"
-import { ApiConfiguration } from "../../../src/shared/api"
-import { validateApiConfiguration, validateMaxRequestsPerTask } from "../utils/validate"
+import { VSCodeButton, VSCodeCheckbox, VSCodeLink, VSCodeTextArea } from "@vscode/webview-ui-toolkit/react"
+import { memo, useEffect, useState } from "react"
+import { useExtensionState } from "../context/ExtensionStateContext"
+import { validateApiConfiguration } from "../utils/validate"
 import { vscode } from "../utils/vscode"
 import ApiOptions from "./ApiOptions"
 
 const IS_DEV = false // FIXME: use flags when packaging
 
 type SettingsViewProps = {
-	version: string
-	apiConfiguration?: ApiConfiguration
-	setApiConfiguration: React.Dispatch<React.SetStateAction<ApiConfiguration | undefined>>
-	koduCredits?: number
-	maxRequestsPerTask: string
-	setMaxRequestsPerTask: React.Dispatch<React.SetStateAction<string>>
-	customInstructions: string
-	setCustomInstructions: React.Dispatch<React.SetStateAction<string>>
 	onDone: () => void
-	alwaysAllowReadOnly: boolean
-	setAlwaysAllowReadOnly: React.Dispatch<React.SetStateAction<boolean>>
-	vscodeUriScheme?: string
 }
 
-const SettingsView = ({
-	version,
-	apiConfiguration,
-	setApiConfiguration,
-	koduCredits,
-	maxRequestsPerTask,
-	setMaxRequestsPerTask,
-	customInstructions,
-	setCustomInstructions,
-	onDone,
-	alwaysAllowReadOnly,
-	setAlwaysAllowReadOnly,
-	vscodeUriScheme,
-}: SettingsViewProps) => {
+const SettingsView = ({ onDone }: SettingsViewProps) => {
+	const {
+		apiConfiguration,
+		version,
+		customInstructions,
+		setCustomInstructions,
+		alwaysAllowReadOnly,
+		setAlwaysAllowReadOnly,
+	} = useExtensionState()
 	const [apiErrorMessage, setApiErrorMessage] = useState<string | undefined>(undefined)
-	const [maxRequestsErrorMessage, setMaxRequestsErrorMessage] = useState<string | undefined>(undefined)
 
 	const handleSubmit = () => {
 		const apiValidationResult = validateApiConfiguration(apiConfiguration)
-		const maxRequestsValidationResult = validateMaxRequestsPerTask(maxRequestsPerTask)
 
 		setApiErrorMessage(apiValidationResult)
-		setMaxRequestsErrorMessage(maxRequestsValidationResult)
 
-		if (!apiValidationResult && !maxRequestsValidationResult) {
+		if (!apiValidationResult) {
 			vscode.postMessage({ type: "apiConfiguration", apiConfiguration })
-			vscode.postMessage({ type: "maxRequestsPerTask", text: maxRequestsPerTask })
 			vscode.postMessage({ type: "customInstructions", text: customInstructions })
 			vscode.postMessage({ type: "alwaysAllowReadOnly", bool: alwaysAllowReadOnly })
 			onDone()
@@ -64,10 +38,6 @@ const SettingsView = ({
 	useEffect(() => {
 		setApiErrorMessage(undefined)
 	}, [apiConfiguration])
-
-	useEffect(() => {
-		setMaxRequestsErrorMessage(undefined)
-	}, [maxRequestsPerTask])
 
 	// validate as soon as the component is mounted
 	/*
@@ -112,14 +82,28 @@ const SettingsView = ({
 			<div
 				style={{ flexGrow: 1, overflowY: "scroll", paddingRight: 8, display: "flex", flexDirection: "column" }}>
 				<div style={{ marginBottom: 5 }}>
-					<ApiOptions
-						apiConfiguration={apiConfiguration}
-						setApiConfiguration={setApiConfiguration}
-						showModelOptions={true}
-						koduCredits={koduCredits}
-						apiErrorMessage={apiErrorMessage}
-						vscodeUriScheme={vscodeUriScheme}
-					/>
+					<ApiOptions showModelOptions={true} apiErrorMessage={apiErrorMessage} />
+				</div>
+
+				<div style={{ marginBottom: 5 }}>
+					<VSCodeTextArea
+						value={customInstructions ?? ""}
+						style={{ width: "100%" }}
+						rows={4}
+						placeholder={
+							'e.g. "Run unit tests at the end", "Use TypeScript with async/await", "Speak in Spanish"'
+						}
+						onInput={(e: any) => setCustomInstructions(e.target?.value ?? "")}>
+						<span style={{ fontWeight: "500" }}>Custom Instructions</span>
+					</VSCodeTextArea>
+					<p
+						style={{
+							fontSize: "12px",
+							marginTop: "5px",
+							color: "var(--vscode-descriptionForeground)",
+						}}>
+						These instructions are added to the end of the system prompt sent with every request.
+					</p>
 				</div>
 
 				<div style={{ marginBottom: 5 }}>
@@ -137,56 +121,6 @@ const SettingsView = ({
 						When enabled, Claude will automatically read files and view directories without requiring you to
 						click the Allow button.
 					</p>
-				</div>
-
-				<div style={{ marginBottom: 5 }}>
-					<VSCodeTextArea
-						value={customInstructions}
-						style={{ width: "100%" }}
-						rows={4}
-						placeholder={
-							'e.g. "Run unit tests at the end", "Use TypeScript with async/await", "Speak in Spanish"'
-						}
-						onInput={(e: any) => setCustomInstructions(e.target?.value || "")}>
-						<span style={{ fontWeight: "500" }}>Custom Instructions</span>
-					</VSCodeTextArea>
-					<p
-						style={{
-							fontSize: "12px",
-							marginTop: "5px",
-							color: "var(--vscode-descriptionForeground)",
-						}}>
-						These instructions are added to the end of the system prompt sent with every request.
-					</p>
-				</div>
-
-				<div>
-					<VSCodeTextField
-						value={maxRequestsPerTask}
-						style={{ width: "100%" }}
-						placeholder="20"
-						onInput={(e: any) => setMaxRequestsPerTask(e.target?.value)}>
-						<span style={{ fontWeight: "500" }}>Maximum # Requests Per Task</span>
-					</VSCodeTextField>
-					<p
-						style={{
-							fontSize: "12px",
-							marginTop: "5px",
-							color: "var(--vscode-descriptionForeground)",
-						}}>
-						If Claude Dev reaches this limit, it will pause and ask for your permission before making
-						additional requests.
-					</p>
-					{maxRequestsErrorMessage && (
-						<p
-							style={{
-								fontSize: "12px",
-								marginTop: "5px",
-								color: "var(--vscode-errorForeground)",
-							}}>
-							{maxRequestsErrorMessage}
-						</p>
-					)}
 				</div>
 
 				{IS_DEV && (
@@ -228,4 +162,4 @@ const SettingsView = ({
 	)
 }
 
-export default SettingsView
+export default memo(SettingsView)

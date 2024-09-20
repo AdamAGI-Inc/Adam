@@ -5,32 +5,24 @@ import { HistoryItem } from "./HistoryItem"
 
 // webview will hold state
 export interface ExtensionMessage {
-	type: "action" | "state" | "selectedImages"
+	type: "action" | "state" | "selectedImages" | "ollamaModels" | "theme" | "workspaceUpdated"
 	text?: string
-	action?:
-		| "chatButtonTapped"
-		| "settingsButtonTapped"
-		| "historyButtonTapped"
-		| "didBecomeVisible"
-		| "koduAuthenticated"
-		| "koduCreditsFetched"
+	action?: "chatButtonTapped" | "settingsButtonTapped" | "historyButtonTapped" | "didBecomeVisible"
 	state?: ExtensionState
 	images?: string[]
+	models?: string[]
+	filePaths?: string[]
 }
 
 export interface ExtensionState {
 	version: string
 	apiConfiguration?: ApiConfiguration
-	maxRequestsPerTask?: number
 	customInstructions?: string
 	alwaysAllowReadOnly?: boolean
-	themeName?: string
 	uriScheme?: string
 	claudeMessages: ClaudeMessage[]
 	taskHistory: HistoryItem[]
 	shouldShowAnnouncement: boolean
-	koduCredits?: number
-	shouldShowKoduPromo: boolean
 }
 
 export interface ClaudeMessage {
@@ -43,7 +35,6 @@ export interface ClaudeMessage {
 }
 
 export type ClaudeAsk =
-	| "request_limit_reached"
 	| "followup"
 	| "command"
 	| "command_output"
@@ -52,6 +43,7 @@ export type ClaudeAsk =
 	| "api_req_failed"
 	| "resume_task"
 	| "resume_completed_task"
+	| "mistake_limit_reached"
 
 export type ClaudeSay =
 	| "task"
@@ -61,9 +53,11 @@ export type ClaudeSay =
 	| "text"
 	| "completion_result"
 	| "user_feedback"
+	| "user_feedback_diff"
 	| "api_req_retried"
 	| "command_output"
 	| "tool"
+	| "shell_integration_warning"
 
 export interface ClaudeSayTool {
 	tool:
@@ -72,8 +66,11 @@ export interface ClaudeSayTool {
 		| "readFile"
 		| "listFilesTopLevel"
 		| "listFilesRecursive"
-		| "viewSourceCodeDefinitionsTopLevel"
+		| "listCodeDefinitionNames"
+		| "searchFiles"
 	path?: string
 	diff?: string
 	content?: string
+	regex?: string
+	filePattern?: string
 }

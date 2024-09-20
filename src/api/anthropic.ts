@@ -1,5 +1,5 @@
 import { Anthropic } from "@anthropic-ai/sdk"
-import { ApiHandler, ApiHandlerMessageResponse, withoutImageData } from "."
+import { ApiHandler, ApiHandlerMessageResponse } from "."
 import { anthropicDefaultModelId, AnthropicModelId, anthropicModels, ApiHandlerOptions, ModelInfo } from "../shared/api"
 
 export class AnthropicHandler implements ApiHandler {
@@ -8,7 +8,10 @@ export class AnthropicHandler implements ApiHandler {
 
 	constructor(options: ApiHandlerOptions) {
 		this.options = options
-		this.client = new Anthropic({ apiKey: this.options.apiKey })
+		this.client = new Anthropic({
+			apiKey: this.options.apiKey,
+			baseURL: this.options.anthropicBaseUrl || undefined,
+		})
 	}
 
 	async createMessage(
@@ -34,6 +37,7 @@ export class AnthropicHandler implements ApiHandler {
 					{
 						model: modelId,
 						max_tokens: this.getModel().info.maxTokens,
+						temperature: 0.2,
 						system: [{ text: systemPrompt, type: "text", cache_control: { type: "ephemeral" } }], // setting cache breakpoint for system prompt so new tasks can reuse it
 						messages: messages.map((message, index) => {
 							if (index === lastUserMsgIndex || index === secondLastMsgUserIndex) {
@@ -86,6 +90,7 @@ export class AnthropicHandler implements ApiHandler {
 				const message = await this.client.messages.create({
 					model: modelId,
 					max_tokens: this.getModel().info.maxTokens,
+					temperature: 0.2,
 					system: [{ text: systemPrompt, type: "text" }],
 					messages,
 					tools,
@@ -93,24 +98,6 @@ export class AnthropicHandler implements ApiHandler {
 				})
 				return { message }
 			}
-		}
-	}
-
-	createUserReadableRequest(
-		userContent: Array<
-			| Anthropic.TextBlockParam
-			| Anthropic.ImageBlockParam
-			| Anthropic.ToolUseBlockParam
-			| Anthropic.ToolResultBlockParam
-		>
-	): any {
-		return {
-			model: this.getModel().id,
-			max_tokens: this.getModel().info.maxTokens,
-			system: "(see SYSTEM_PROMPT in src/ClaudeDev.ts)",
-			messages: [{ conversation_history: "..." }, { role: "user", content: withoutImageData(userContent) }],
-			tools: "(see tools in src/ClaudeDev.ts)",
-			tool_choice: { type: "auto" },
 		}
 	}
 

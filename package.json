@@ -2,8 +2,12 @@
   "name": "claude-dev",
   "displayName": "Claude Dev",
   "description": "Autonomous coding agent right in your IDE, capable of creating/editing files, executing commands, and more with your permission every step of the way.",
-  "version": "1.4.12",
-  "icon": "icon.png",
+  "version": "1.8.1",
+  "icon": "icons/icon.png",
+  "galleryBanner": {
+    "color": "#1E1E1E",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.84.0"
   },
@@ -17,14 +21,22 @@
     "url": "https://github.com/saoudrizwan/claude-dev"
   },
   "categories": [
-    "AI"
+    "AI",
+    "Chat",
+    "Programming Languages",
+    "Education",
+    "Snippets",
+    "Testing"
   ],
   "keywords": [
-    "AI",
-    "Claude",
-    "agentic",
-    "productivity",
-    "automation"
+    "claude",
+    "coding",
+    "agent",
+    "autonomous",
+    "chatgpt",
+    "sonnet",
+    "ai",
+    "llama"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
@@ -115,13 +127,14 @@
     "install:all": "npm install && cd webview-ui && npm install",
     "start:webview": "cd webview-ui && npm run start",
     "build:webview": "cd webview-ui && npm run build",
-    "test:webview": "cd webview-ui && npm run test"
+    "test:webview": "cd webview-ui && npm run test",
+    "publish:marketplace": "vsce publish && ovsx publish"
   },
   "devDependencies": {
     "@types/diff": "^5.2.1",
     "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
-    "@types/vscode": "^1.82.0",
+    "@types/vscode": "^1.84.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.11.0",
     "@vscode/test-cli": "^0.0.9",
@@ -134,23 +147,30 @@
   "dependencies": {
     "@anthropic-ai/bedrock-sdk": "^0.10.2",
     "@anthropic-ai/sdk": "^0.26.0",
-    "@anthropic-ai/tokenizer": "^0.0.4",
-    "@kodu-ai/cloud-api": "^1.0.1",
+    "@anthropic-ai/vertex-sdk": "^0.4.1",
+    "@google/generative-ai": "^0.18.0",
+    "@types/clone-deep": "^4.0.4",
+    "@types/pdf-parse": "^1.1.4",
+    "@types/turndown": "^5.0.5",
     "@vscode/codicons": "^0.0.36",
     "axios": "^1.7.4",
+    "cheerio": "^1.0.0",
+    "clone-deep": "^4.0.1",
     "default-shell": "^2.2.0",
     "delay": "^6.0.0",
     "diff": "^5.2.0",
-    "execa": "^9.3.0",
+    "fast-deep-equal": "^3.1.3",
     "globby": "^14.0.2",
-    "openai": "^4.54.0",
+    "isbinaryfile": "^5.0.2",
+    "mammoth": "^1.8.0",
+    "monaco-vscode-textmate-theme-converter": "^0.1.7",
+    "openai": "^4.61.0",
     "os-name": "^6.0.0",
     "p-wait-for": "^5.0.2",
-    "rewire": "^7.0.0",
     "serialize-error": "^11.0.3",
-    "tree-kill": "^1.2.2",
+    "strip-ansi": "^7.1.0",
     "tree-sitter-wasms": "^0.1.11",
-    "web-tree-sitter": "^0.22.6",
-    "zod": "^3.23.8"
+    "turndown": "^7.2.0",
+    "web-tree-sitter": "^0.22.6"
   }
 }

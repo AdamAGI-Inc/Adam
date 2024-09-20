@@ -1,15 +1,3 @@
-/* body {
-	margin: 0;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
-		"Droid Sans", "Helvetica Neue", sans-serif;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-}
-
-code {
-	font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-} */
-
 textarea:focus {
 	outline: 1.5px solid var(--vscode-focusBorder, #007fd4);
 }
@@ -136,4 +124,45 @@ vscode-dropdown::part(listbox) {
 	border-color: var(--vscode-scrollbarSlider-background);
 	transition: none;
 	scrollbar-color: var(--vscode-scrollbarSlider-background) transparent;
+}
+
+/* Faded icon buttons in textfields */
+
+.input-icon-button {
+	cursor: pointer;
+	opacity: 0.65;
+}
+.input-icon-button:hover {
+	opacity: 1;
+}
+.input-icon-button.disabled {
+	cursor: not-allowed;
+	opacity: 0.4;
+}
+.input-icon-button.disabled:hover {
+	opacity: 0.4;
+}
+
+/* Context mentions */
+
+.mention-context-textarea-highlight {
+	background-color: color-mix(in srgb, var(--vscode-badge-foreground) 30%, transparent);
+	border-radius: 3px;
+	box-shadow: 0 0 0 0.5px color-mix(in srgb, var(--vscode-badge-foreground) 30%, transparent);
+	color: transparent;
+	/* padding: 0.5px;
+	margin: -0.5px;
+	position: relative;
+	bottom: -0.5px; */
+}
+
+.mention-context-highlight {
+	background-color: color-mix(in srgb, var(--vscode-badge-foreground) 30%, transparent);
+	border-radius: 3px;
+}
+
+.mention-context-highlight-with-shadow {
+	background-color: color-mix(in srgb, var(--vscode-badge-foreground) 30%, transparent);
+	border-radius: 3px;
+	box-shadow: 0 0 0 0.5px color-mix(in srgb, var(--vscode-badge-foreground) 30%, transparent);
 }

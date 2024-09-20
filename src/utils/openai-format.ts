@@ -34,23 +34,7 @@ export function convertToOpenAiMessages(
 					{ nonToolMessages: [], toolMessages: [] }
 				)
 
-				// Process non-tool messages
-				if (nonToolMessages.length > 0) {
-					openAiMessages.push({
-						role: "user",
-						content: nonToolMessages.map((part) => {
-							if (part.type === "image") {
-								return {
-									type: "image_url",
-									image_url: { url: `data:${part.source.media_type};base64,${part.source.data}` },
-								}
-							}
-							return { type: "text", text: part.text }
-						}),
-					})
-				}
-
-				// Process tool result messages
+				// Process tool result messages FIRST since they must follow the tool use messages
 				let toolResultImages: Anthropic.Messages.ImageBlockParam[] = []
 				toolMessages.forEach((toolMessage) => {
 					// The Anthropic SDK allows tool results to be a string or an array of text and image blocks, enabling rich and structured content. In contrast, the OpenAI SDK only supports tool results as a single string, so we map the Anthropic tool result parts into one concatenated string to maintain compatibility.
@@ -81,6 +65,7 @@ export function convertToOpenAiMessages(
 				// I ran into an issue where if I gave feedback for one of many tool uses, the request would fail.
 				// "Messages following `tool_use` blocks must begin with a matching number of `tool_result` blocks."
 				// Therefore we need to send these images after the tool result messages
+				// NOTE: it's actually okay to have multiple user messages in a row, the model will treat them as a continuation of the same input (this way works better than combining them into one message, since the tool result specifically mentions (see following user message for image)
 				if (toolResultImages.length > 0) {
 					openAiMessages.push({
 						role: "user",
@@ -88,6 +73,22 @@ export function convertToOpenAiMessages(
 							type: "image_url",
 							image_url: { url: `data:${part.source.media_type};base64,${part.source.data}` },
 						})),
+					})
+				}
+
+				// Process non-tool messages
+				if (nonToolMessages.length > 0) {
+					openAiMessages.push({
+						role: "user",
+						content: nonToolMessages.map((part) => {
+							if (part.type === "image") {
+								return {
+									type: "image_url",
+									image_url: { url: `data:${part.source.media_type};base64,${part.source.data}` },
+								}
+							}
+							return { type: "text", text: part.text }
+						}),
 					})
 				}
 			} else if (anthropicMessage.role === "assistant") {
@@ -141,4 +142,61 @@ export function convertToOpenAiMessages(
 	}
 
 	return openAiMessages
+}
+
+// Convert OpenAI response to Anthropic format
+export function convertToAnthropicMessage(
+	completion: OpenAI.Chat.Completions.ChatCompletion
+): Anthropic.Messages.Message {
+	const openAiMessage = completion.choices[0].message
+	const anthropicMessage: Anthropic.Messages.Message = {
+		id: completion.id,
+		type: "message",
+		role: openAiMessage.role, // always "assistant"
+		content: [
+			{
+				type: "text",
+				text: openAiMessage.content || "",
+			},
+		],
+		model: completion.model,
+		stop_reason: (() => {
+			switch (completion.choices[0].finish_reason) {
+				case "stop":
+					return "end_turn"
+				case "length":
+					return "max_tokens"
+				case "tool_calls":
+					return "tool_use"
+				case "content_filter": // Anthropic doesn't have an exact equivalent
+				default:
+					return null
+			}
+		})(),
+		stop_sequence: null, // which custom stop_sequence was generated, if any (not applicable if you don't use stop_sequence)
+		usage: {
+			input_tokens: completion.usage?.prompt_tokens || 0,
+			output_tokens: completion.usage?.completion_tokens || 0,
+		},
+	}
+
+	if (openAiMessage.tool_calls && openAiMessage.tool_calls.length > 0) {
+		anthropicMessage.content.push(
+			...openAiMessage.tool_calls.map((toolCall): Anthropic.ToolUseBlock => {
+				let parsedInput = {}
+				try {
+					parsedInput = JSON.parse(toolCall.function.arguments || "{}")
+				} catch (error) {
+					console.error("Failed to parse tool arguments:", error)
+				}
+				return {
+					type: "tool_use",
+					id: toolCall.id,
+					name: toolCall.function.name,
+					input: parsedInput,
+				}
+			})
+		)
+	}
+	return anthropicMessage
 }

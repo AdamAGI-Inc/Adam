@@ -3,23 +3,23 @@ import { ApiConfiguration, ApiProvider } from "./api"
 export interface WebviewMessage {
 	type:
 		| "apiConfiguration"
-		| "maxRequestsPerTask"
 		| "customInstructions"
 		| "alwaysAllowReadOnly"
 		| "webviewDidLaunch"
 		| "newTask"
 		| "askResponse"
 		| "clearTask"
-		| "didCloseAnnouncement"
+		| "didShowAnnouncement"
 		| "selectImages"
 		| "exportCurrentTask"
 		| "showTaskWithId"
 		| "deleteTaskWithId"
 		| "exportTaskWithId"
-		| "didClickKoduSignOut"
-		| "fetchKoduCredits"
-		| "didDismissKoduPromo"
 		| "resetState"
+		| "requestOllamaModels"
+		| "openImage"
+		| "openFile"
+		| "openMention"
 	text?: string
 	askResponse?: ClaudeAskResponse
 	apiConfiguration?: ApiConfiguration

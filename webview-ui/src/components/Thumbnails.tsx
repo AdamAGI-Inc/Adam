@@ -1,5 +1,6 @@
-import React, { useState, useRef, useLayoutEffect } from "react"
+import React, { useState, useRef, useLayoutEffect, memo } from "react"
 import { useWindowSize } from "react-use"
+import { vscode } from "../utils/vscode"
 
 interface ThumbnailsProps {
 	images: string[]
@@ -8,7 +9,7 @@ interface ThumbnailsProps {
 	onHeightChange?: (height: number) => void
 }
 
-const Thumbnails: React.FC<ThumbnailsProps> = ({ images, style, setImages, onHeightChange }) => {
+const Thumbnails = ({ images, style, setImages, onHeightChange }: ThumbnailsProps) => {
 	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 	const containerRef = useRef<HTMLDivElement>(null)
 	const { width } = useWindowSize()
@@ -30,6 +31,10 @@ const Thumbnails: React.FC<ThumbnailsProps> = ({ images, style, setImages, onHei
 	}
 
 	const isDeletable = setImages !== undefined
+
+	const handleImageClick = (image: string) => {
+		vscode.postMessage({ type: "openImage", text: image })
+	}
 
 	return (
 		<div
@@ -55,7 +60,9 @@ const Thumbnails: React.FC<ThumbnailsProps> = ({ images, style, setImages, onHei
 							height: 34,
 							objectFit: "cover",
 							borderRadius: 4,
+							cursor: "pointer",
 						}}
+						onClick={() => handleImageClick(image)}
 					/>
 					{isDeletable && hoveredIndex === index && (
 						<div
@@ -88,4 +95,4 @@ const Thumbnails: React.FC<ThumbnailsProps> = ({ images, style, setImages, onHei
 	)
 }
 
-export default Thumbnails
+export default memo(Thumbnails)

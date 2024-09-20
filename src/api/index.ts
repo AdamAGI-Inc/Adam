@@ -1,9 +1,13 @@
 import { Anthropic } from "@anthropic-ai/sdk"
-import { ApiConfiguration, ApiModelId, ModelInfo } from "../shared/api"
+import { ApiConfiguration, ModelInfo } from "../shared/api"
 import { AnthropicHandler } from "./anthropic"
 import { AwsBedrockHandler } from "./bedrock"
 import { OpenRouterHandler } from "./openrouter"
-import { KoduHandler } from "./kodu"
+import { VertexHandler } from "./vertex"
+import { OpenAiHandler } from "./openai"
+import { OllamaHandler } from "./ollama"
+import { GeminiHandler } from "./gemini"
+import { OpenAiNativeHandler } from "./openai-native"
 
 export interface ApiHandlerMessageResponse {
 	message: Anthropic.Messages.Message
@@ -17,16 +21,7 @@ export interface ApiHandler {
 		tools: Anthropic.Messages.Tool[]
 	): Promise<ApiHandlerMessageResponse>
 
-	createUserReadableRequest(
-		userContent: Array<
-			| Anthropic.TextBlockParam
-			| Anthropic.ImageBlockParam
-			| Anthropic.ToolUseBlockParam
-			| Anthropic.ToolResultBlockParam
-		>
-	): any
-
-	getModel(): { id: ApiModelId; info: ModelInfo }
+	getModel(): { id: string; info: ModelInfo }
 }
 
 export function buildApiHandler(configuration: ApiConfiguration): ApiHandler {
@@ -38,37 +33,17 @@ export function buildApiHandler(configuration: ApiConfiguration): ApiHandler {
 			return new OpenRouterHandler(options)
 		case "bedrock":
 			return new AwsBedrockHandler(options)
-		case "kodu":
-			return new KoduHandler(options)
+		case "vertex":
+			return new VertexHandler(options)
+		case "openai":
+			return new OpenAiHandler(options)
+		case "ollama":
+			return new OllamaHandler(options)
+		case "gemini":
+			return new GeminiHandler(options)
+		case "openai-native":
+			return new OpenAiNativeHandler(options)
 		default:
 			return new AnthropicHandler(options)
 	}
-}
-
-export function withoutImageData(
-	userContent: Array<
-		| Anthropic.TextBlockParam
-		| Anthropic.ImageBlockParam
-		| Anthropic.ToolUseBlockParam
-		| Anthropic.ToolResultBlockParam
-	>
-): Array<
-	Anthropic.TextBlockParam | Anthropic.ImageBlockParam | Anthropic.ToolUseBlockParam | Anthropic.ToolResultBlockParam
-> {
-	return userContent.map((part) => {
-		if (part.type === "image") {
-			return { ...part, source: { ...part.source, data: "..." } }
-		} else if (part.type === "tool_result" && typeof part.content !== "string") {
-			return {
-				...part,
-				content: part.content?.map((contentPart) => {
-					if (contentPart.type === "image") {
-						return { ...contentPart, source: { ...contentPart.source, data: "..." } }
-					}
-					return contentPart
-				}),
-			}
-		}
-		return part
-	})
 }
